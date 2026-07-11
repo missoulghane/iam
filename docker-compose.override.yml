@@ -1,0 +1,52 @@
+# Dev overlay — automatically merged by `docker compose up` whenever no
+# explicit -f flags are passed. NOT loaded when the VPS deploy command
+# (`docker compose -f docker-compose.yml -f docker-compose.prod.yml ...`)
+# is used, since that explicit -f list replaces Compose's default file
+# resolution.
+#
+# Switches backend/frontend to their "dev" build targets, publishes ports
+# for local debugging, and bind-mounts the frontend source for Vite HMR.
+
+services:
+  database:
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+
+  backend:
+    build:
+      target: dev
+    volumes:
+      - maven_cache:/root/.m2
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+
+  frontend:
+    build:
+      target: dev
+    env_file:
+      - ./iam-web/.env
+    environment:
+      # Vite dev server proxy target — see iam-web/vite.config.ts.
+      # Inside Docker "localhost" would point at the frontend container
+      # itself, so it must be overridden to the backend service name.
+      VITE_PROXY_TARGET: http://backend:8080
+    volumes:
+      - ./iam-web:/app
+      - /app/node_modules
+    # Hardcoded (not FRONTEND_PORT): that variable is prod-only (see
+    # docker-compose.prod.yml) — sharing it here would let a FRONTEND_PORT
+    # set for prod silently leak into the dev port mapping.
+    ports:
+      - "5173:5173"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:5173/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    depends_on:
+      backend:
+        condition: service_started
+
+volumes:
+  maven_cache:

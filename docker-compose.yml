@@ -1,0 +1,66 @@
+# Base stack — shared truth for every environment (build contexts, network,
+# dependency graph, healthchecks, volumes). This file alone is what gets
+# deployed to a VPS when combined with docker-compose.prod.yml.
+#
+# Local dev:  docker compose up --build
+#             (docker-compose.override.yml is auto-merged by Compose)
+# Production: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+
+services:
+  database:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - database_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - iam-network
+
+  backend:
+    build:
+      context: ./iam-api
+    env_file:
+      - .env            # Docker-only: JWT, profile, ports
+      - ./iam-api/.env  # single source of truth for mail creds (native + Docker)
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      DB_URL: jdbc:postgresql://database:5432/${POSTGRES_DB}
+      DB_USERNAME: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+    depends_on:
+      database:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    restart: unless-stopped
+    networks:
+      - iam-network
+
+  frontend:
+    build:
+      context: ./iam-web
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - iam-network
+
+networks:
+  iam-network:
+    driver: bridge
+
+volumes:
+  database_data:

@@ -1,0 +1,1 @@
+export { homeProtectedRoutes } from './routes'

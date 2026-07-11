@@ -1,0 +1,13 @@
+target/
+docs/
+.git
+.gitignore
+.gitattributes
+.env
+.env.*
+!.env.example
+.idea
+.vscode
+*.iml
+HELP.md
+.DS_Store

@@ -1,0 +1,1 @@
+export { profileProtectedRoutes } from './routes'

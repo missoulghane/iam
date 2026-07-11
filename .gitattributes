@@ -1,0 +1,48 @@
+# Auto detect text files and normalize line endings to LF on checkin
+* text=auto eol=lf
+
+### Scripts ###
+*.sh text eol=lf
+*.bash text eol=lf
+mvnw text eol=lf
+mvnw.cmd text eol=crlf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+
+### Source code ###
+*.java text diff=java
+*.ts text
+*.tsx text
+*.js text
+*.jsx text
+*.json text
+*.yml text
+*.yaml text
+*.xml text
+*.properties text
+*.md text
+*.css text
+*.scss text
+*.html text
+
+### Binary files ###
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.jar binary
+*.war binary
+*.class binary
+
+### Linguist overrides ###
+/iam-web/package-lock.json linguist-generated=true
+/iam-api/mvnw linguist-vendored
+/iam-api/mvnw.cmd linguist-vendored
+/iam-api/.mvn/** linguist-vendored
