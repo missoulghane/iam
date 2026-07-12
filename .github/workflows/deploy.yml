@@ -13,6 +13,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Backend Spring Boot
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
@@ -24,3 +25,30 @@ jobs:
         run: |
           chmod +x mvnw
           ./mvnw clean package -DskipTests
+
+      - name: Build Backend Docker Image
+        run: |
+          docker build -t iam-api ./iam-api
+
+
+      # Frontend React
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: iam-web/package-lock.json
+
+      - name: Install React dependencies
+        working-directory: iam-web
+        run: |
+          npm ci
+
+      - name: Build React Application
+        working-directory: iam-web
+        run: |
+          npm run build
+
+      - name: Build Frontend Docker Image
+        run: |
+          docker build -t iam-web ./iam-web
